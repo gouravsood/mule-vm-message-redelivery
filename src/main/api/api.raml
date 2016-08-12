@@ -1,0 +1,29 @@
+#%RAML 0.8
+title: Sample API
+
+/redelivery:
+  post:
+    description: testing redelivery
+    body: 
+      application/xml:
+        #schema: !include schemas/...
+        #example: !include examples/...
+        example: <test><value>START</value></test>
+    responses:
+      200:
+        description: |
+          The message was processed.
+        body:
+          application/xml:
+            #schema: !include schemas/... 
+            #example: !include examples/...
+            example: <test><value>DONE</value></test>
+      400:
+        description: |
+          Bad Request.
+        body:
+          application/xml:
+            #schema: !include schemas/... 
+            #example: !include examples/... 
+            example: <test><value>ERROR</value></test>
+            

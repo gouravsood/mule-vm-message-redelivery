@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <vm:connector name="VM" validateConnections="true" doc:name="VM"/>
+    <sub-flow name="sf_handle-redelivery-request">
+        <logger message="Message received for redelivery : (#[message.payloadAs(java.lang.String)])" level="INFO" doc:name="Logger"/>
+        <vm:outbound-endpoint exchange-pattern="one-way" path="Q.REDELIVERY.TEST" doc:name="VM"/>
+    </sub-flow>
+    <flow name="sf_handle-q-redelivery-request">
+        <vm:inbound-endpoint exchange-pattern="one-way" path="Q.REDELIVERY.TEST" doc:name="VM">
+            <vm:transaction action="ALWAYS_BEGIN"/>
+        </vm:inbound-endpoint>
+        <logger message="Message read from Q : (#[message.payloadAs(java.lang.String)])" level="INFO" doc:name="Logger"/>
+        <scripting:transformer doc:name="Groovy - Throw Exception">
+            <scripting:script engine="Groovy"><![CDATA[throw new au.com.myexception.RedeliveryException("This my dummy exception to check the redelivery.")]]></scripting:script>
+        </scripting:transformer>
+        <exception-strategy ref="handle-redelivery-request_Choice_Exception_Strategy" doc:name="Reference Exception Strategy"/>
+    </flow>
+    <choice-exception-strategy name="handle-redelivery-request_Choice_Exception_Strategy">
+        <rollback-exception-strategy maxRedeliveryAttempts="5" when="#[exception.causeMatches('au.com.myexception.RedeliveryException')]" doc:name="Rollback Exception Strategy">
+            <logger message="Exception Received and Trying again." level="INFO" doc:name="Logger"/>
+            <on-redelivery-attempts-exceeded>
+                <logger message="Redelivery Exchausted!!!!" level="INFO" doc:name="Logger"/>
+            </on-redelivery-attempts-exceeded>
+        </rollback-exception-strategy>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <logger message="Other exception occured!!!" level="INFO" doc:name="Logger"/>
+        </catch-exception-strategy>
+    </choice-exception-strategy>
+</mule>
