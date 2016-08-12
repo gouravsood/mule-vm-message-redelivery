@@ -27,6 +27,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
     <choice-exception-strategy name="handle-redelivery-request_Choice_Exception_Strategy">
         <rollback-exception-strategy maxRedeliveryAttempts="5" when="#[exception.causeMatches('au.com.myexception.RedeliveryException')]" doc:name="Rollback Exception Strategy">
             <logger message="Exception Received and Trying again." level="INFO" doc:name="Logger"/>
+            <expression-component doc:name="Sleep thread for a while"><![CDATA[java.lang.Thread.sleep(10000);]]></expression-component>
             <on-redelivery-attempts-exceeded>
                 <logger message="Redelivery Exchausted!!!!" level="INFO" doc:name="Logger"/>
             </on-redelivery-attempts-exceeded>
